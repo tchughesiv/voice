@@ -1,0 +1,44 @@
+#! /bin/bash
+# written by Tommy Hughes - 08/10/2016
+SCRIPT=`realpath $0`
+DIR=`dirname $SCRIPT`
+
+gcloud_key=hello-3e6b97c433a7.json
+
+echo "Recording… Press Ctrl+C to Stop."
+### arecord -q -t wav -d 20 -f S16_LE -r 44100 | flac - -f --best --sample-rate 44100 -s -o file.flac
+rec -q -t wav -c 1 -b 16 -r 32000 $DIR/file.wav silence 1 0.05 0.1% 1 3.0 1%
+flac -s $DIR/file.wav -f --best --sample-rate 32000 -s -o $DIR/file.flac
+
+base64 -w 0 $DIR/file.flac > $DIR/sync-request.json
+sed -i '1s/^/{"config":{"encoding":"FLAC","sample_rate":"32000"},"audio":{"content":"/' $DIR/sync-request.json
+sed -i '1s/$/"}}/' $DIR/sync-request.json
+
+if test `find "$DIR/access_token" -mmin +60` || [ ! -f "$DIR/access_token" ]
+then
+	gcloud auth activate-service-account --key-file=$DIR/$gcloud_key
+	gcloud auth print-access-token > $DIR/access_token
+fi
+
+access_token=`cat $DIR/access_token`
+
+echo "Processing… "
+curl -s -k -H "Content-Type: application/json" \
+    -H "Authorization: Bearer $access_token" \
+    https://speech.googleapis.com/v1beta1/speech:syncrecognize \
+    -d @$DIR/sync-request.json \
+    | jq --raw-output '.results[].alternatives[].transcript' | awk '{printf $0}' | xclip -sel clip
+
+echo
+echo "The following was copied to your clipboard:"
+
+echo -n '"'
+xsel -b
+echo -n '"'
+echo
+echo
+# live_window=`xprop -id $(xprop -root _NET_ACTIVE_WINDOW | cut -d ' ' -f 5) WM_NAME | sed -nr 's/.*= "(.*)"$/\1/p'`
+# active_win_pid=`xprop -id $(xprop -root _NET_ACTIVE_WINDOW | cut -d ' ' -f 5) _NET_WM_PID | sed -nr 's/.*= (.*)$/\1/p'`
+# process_name=`cat /proc/$active_win_pid/task/$active_win_pid/comm`
+# xsel -b | $process_name -
+rm $DIR/file.wav > /dev/null 2>&1
