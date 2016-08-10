@@ -42,3 +42,4 @@ echo
 # process_name=`cat /proc/$active_win_pid/task/$active_win_pid/comm`
 # xsel -b | $process_name -
 rm $DIR/file.wav > /dev/null 2>&1
+exec $SHELL
