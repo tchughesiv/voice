@@ -27,7 +27,7 @@ curl -s -k -H "Content-Type: application/json" \
     -H "Authorization: Bearer $access_token" \
     https://speech.googleapis.com/v1beta1/speech:syncrecognize \
     -d @$DIR/sync-request.json \
-    | jq --raw-output '.results[].alternatives[].transcript' | awk '{printf $0}' | xclip -sel clip
+    | jq --raw-output '.results[].alternatives[].transcript' | awk '{printf $0}' | xclip -selection clipboard
 
 echo
 echo "The following was copied to your clipboard:"
