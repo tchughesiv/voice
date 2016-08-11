@@ -1,5 +1,6 @@
 #! /bin/bash
 # written by Tommy Hughes - 08/10/2016
+source ~/.bashrc
 SCRIPT=`realpath $0`
 DIR=`dirname $SCRIPT`
 
